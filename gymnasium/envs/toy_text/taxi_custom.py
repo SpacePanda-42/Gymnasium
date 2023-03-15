@@ -211,6 +211,7 @@ class CustomTaxiEnv(Env):
 
         self.locs = locs
         self.locs_colors = locs_colors
+        self.n_rows = n_rows
 
         num_rows = n_rows
         num_columns = n_cols
@@ -300,15 +301,19 @@ class CustomTaxiEnv(Env):
         return i
 
     def decode(self, i):
+        # This decodes the state as an int to a state vector.
+        # state = ((taxi_row * 5 + taxi_col) * 5 + passenger_location) * 4 + destination
+        # passenger locations: 0 (red), 1 (green), 2 (yellow), 3 (blue), 4 (in taxi)
+        # destinations: 0 (red), 1 (green), 2 (yellow), 3 (blue)
         out = []
-        out.append(i % 4)
+        out.append(i % 4) # calculates and appends destination value 
         i = i // 4
-        out.append(i % 5)
+        out.append(i % 5) # calculates and appends passenger location value
         i = i // 5
-        out.append(i % 5)
+        out.append(i % 5) # calculates and appends taxi location column value
         i = i // 5
-        out.append(i)
-        assert 0 <= i < 5
+        out.append(i) # calculates and appends taxi location row value
+        assert 0 <= i < self.n_rows # note: this makes sure it's a valid state by checking that i (which corresponds to taxi location row number) is a valid row 
         return reversed(out)
 
     def action_mask(self, state: int):
