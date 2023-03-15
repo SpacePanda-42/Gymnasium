@@ -21,6 +21,10 @@ MAP = [
     "+---------+",
 ]
 
+locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
+locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
+
+
 # This is the larger map that gets plugged in to the environment
 MAP2 = [
     "+-------------------------+",
@@ -202,15 +206,15 @@ class CustomTaxiEnv(Env):
         "render_fps": 4,
     }
 
-    def __init__(self, map=MAP, render_mode: Optional[str] = None):
+    def __init__(self, map=MAP, locs=locs, n_rows=5, n_cols=5, locs_colors=locs_colors, render_mode: Optional[str] = None):
         self.desc = np.asarray(map, dtype="c")
 
-        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
-        self.locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
+        self.locs = locs
+        self.locs_colors = locs_colors
 
         num_states = 500
-        num_rows = 5
-        num_columns = 5
+        num_rows = n_rows
+        num_columns = n_cols
         max_row = num_rows - 1
         max_col = num_columns - 1
         self.initial_state_distrib = np.zeros(num_states)
