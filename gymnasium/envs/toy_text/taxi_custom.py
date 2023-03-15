@@ -20,6 +20,52 @@ MAP = [
     "|Y| : |B: |",
     "+---------+",
 ]
+
+# This is the larger map that gets plugged in to the environment
+MAP2 = [
+    "+-------------------------+",
+    "|R: : : : : : | | | : : :G|",
+    "| : : : : : : | | | : : : |",
+    "| : : : : : : | | | : : : |",
+    "| : : : : : : | | | : : : |",
+    "| : : : : : : | | | : : : |",
+    "| : : : : : : : : : : : : |",
+    "| : : | : : : : : : : : : |",
+    "| : : | : : : : : : : : : |",
+    "|Y: : | : : : : : : : :B: |",
+    "+-------------------------+",
+]
+
+# This version of the maps does not get used by the simulator, but it's here to visually show where danger and risky tiles are located
+# U = RISKY TILE
+# H = HAZARD TILE
+# Z = GOOD TILE
+# TODO Implement these
+# Note: ":" denotes a visual separation between two spaces in the grid, " " means empty space, "|" means wall/barrier.
+# "R", "G", "Y", and "B" are all possible pickup or dropoff locations. We can pick these randomly (?) (not sure how they're currently chosen)
+# Assuming the taxi starts off from a random location.
+
+# Why this layout?
+# Assuming we go Y --> G...
+# 1) A* picks the shortest path. This will bring it through the H squares, and accumulate outsize negative reward
+# 2) Q-learning will mistakenly take the U tiles due to the "max" in the Q-learning equation. Double-Q learning should avoid this pitfall and go around the U tiles (which have stochastic reward, but the expected value is negative). 
+# 3) Maybe some other justifications. What would we expect for SARSA and Deep Q? Potential model-based method?
+
+
+MAP2LEGEND = [
+    "+-------------------------+",
+    "|R: : : : : : | | |H: : :G|",
+    "| : : : : : : | | |H: : :U|",
+    "| : : : : : : | | |H: : :U|",
+    "| : : : : : : | | |H: : :U|",
+    "| : :H: : : : | | |H: : :U|",
+    "| : :H: : : :H:H:H:H: : :U|",
+    "| : :U| : : :U:U:U:U: : :U|",
+    "| : :U| : : : : : : : : : |",
+    "|Y: :U| : : : : : : : :B: |",
+    "+-------------------------+",
+]
+
 WINDOW_SIZE = (550, 350)
 
 
@@ -156,8 +202,8 @@ class CustomTaxiEnv(Env):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None):
-        self.desc = np.asarray(MAP, dtype="c")
+    def __init__(self, map=MAP, render_mode: Optional[str] = None):
+        self.desc = np.asarray(map, dtype="c")
 
         self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
         self.locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
