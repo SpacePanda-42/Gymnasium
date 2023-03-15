@@ -212,13 +212,13 @@ class CustomTaxiEnv(Env):
         self.locs = locs
         self.locs_colors = locs_colors
 
-        num_states = 500
         num_rows = n_rows
         num_columns = n_cols
+        num_states = n_rows*n_cols*5*4 # num_states = (number of taxi positions) x (possible locations for passenger) x (number of destination locations)
         max_row = num_rows - 1
         max_col = num_columns - 1
         self.initial_state_distrib = np.zeros(num_states)
-        num_actions = 6
+        num_actions = 7 # left, right, up, down, pick up, drop off, do nothing 
         self.P = {
             state: {action: [] for action in range(num_actions)}
             for state in range(num_states)
