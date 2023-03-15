@@ -98,6 +98,7 @@ def test_register_error(env_id):
         ("Blackjock-v1", "Blackjack"),
         ("mountaincarcontinuous-v0", "MountainCarContinuous"),
         ("taxi-v3", "Taxi"),
+        ("taxi-custom", "Taxi"),
         ("taxi-v30", "Taxi"),
         ("MyAwesomeNamspce/MyAwesomeVersionedEnv-v1", "MyAwesomeNamespace"),
         ("MyAwesomeNamspce/MyAwesomeUnversionedEnv", "MyAwesomeNamespace"),
