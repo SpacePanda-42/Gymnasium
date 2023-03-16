@@ -23,7 +23,7 @@ MAP = [
 WINDOW_SIZE = (550, 350)
 
 
-class TaxiEnv(Env):
+class CustomTaxiEnv(Env):
     """
     The Taxi Problem involves navigating to passengers in a grid world, picking them up and dropping them
     off at one of four locations.
@@ -317,7 +317,7 @@ class TaxiEnv(Env):
                                     (1.0, new_state,
                                      reward, terminated)
                                 )
-                                
+
         self.initial_state_distrib /= self.initial_state_distrib.sum()
         self.action_space = spaces.Discrete(num_actions)
         self.observation_space = spaces.Discrete(num_states)
