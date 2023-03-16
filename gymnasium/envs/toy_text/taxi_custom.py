@@ -198,10 +198,10 @@ class CustomTaxiEnv(Env):
         "render_fps": 4,
     }
 
-    def __init__(self, map=MAP, starting_state=None, risky_tiles=[], hazard_tiles=[], happy_tiles =[], render_mode: Optional[str] = None):
+    def __init__(self, map=MAP, locs=[(0, 0), (0, 4), (4, 0), (4, 3)], starting_state=None, risky_tiles=[], hazard_tiles=[], happy_tiles =[], render_mode: Optional[str] = None):
         self.desc = np.asarray(MAP, dtype="c")
 
-        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
+        self.locs = locs
         self.locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
 
         num_states = 500
