@@ -169,6 +169,8 @@ class TaxiEnv(Env):
         max_col = num_columns - 1
         self.initial_state_distrib = np.zeros(num_states)
         num_actions = 6
+
+        # transition probabilities for the states
         self.P = {
             state: {action: [] for action in range(num_actions)}
             for state in range(num_states)
@@ -258,6 +260,8 @@ class TaxiEnv(Env):
         out.append(i % 5)
         i = i // 5
         out.append(i)
+        print("AYAYAYYAYA")
+        print(i)
         assert 0 <= i < 5
         return reversed(out)
 

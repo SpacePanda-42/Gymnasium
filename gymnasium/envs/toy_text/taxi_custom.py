@@ -256,13 +256,8 @@ class CustomTaxiEnv(Env):
                             )  # default reward when there is no pickup/dropoff
                             terminated = False
                             taxi_loc = (row, col)
-                            print("action!!!!!")
-                            print(action)
-                            print(row)
                             if action == 0:
-                                print("i entered this if")
                                 new_row = min(row + 1, max_row)
-                                print(new_row)
                             elif action == 1:
                                 new_row = max(row - 1, 0)
                             if action == 2 and self.desc[1 + row, 2 * col + 2] == b":":
