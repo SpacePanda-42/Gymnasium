@@ -234,6 +234,8 @@ class CustomTaxiEnv(Env):
         num_states = n_rows*n_cols*5*4 # num_states = (number of taxi positions) x (possible locations for passenger) x (number of destination locations)
         max_row = num_rows - 1
         max_col = num_columns - 1
+        self.max_row = num_rows - 1
+        self.max_col = num_columns - 1
         self.initial_state_distrib = np.zeros(num_states)
         self.P = {
             state: {action: [] for action in range(num_actions)}
@@ -335,11 +337,11 @@ class CustomTaxiEnv(Env):
         """Computes an action mask for the action space using the state information."""
         mask = np.zeros(6, dtype=np.int8)
         taxi_row, taxi_col, pass_loc, dest_idx = self.decode(state)
-        if taxi_row < 4:
+        if taxi_row < self.max_row:
             mask[0] = 1
         if taxi_row > 0:
             mask[1] = 1
-        if taxi_col < 4 and self.desc[taxi_row + 1, 2 * taxi_col + 2] == b":":
+        if taxi_col < self.max_col and self.desc[taxi_row + 1, 2 * taxi_col + 2] == b":":
             mask[2] = 1
         if taxi_col > 0 and self.desc[taxi_row + 1, 2 * taxi_col] == b":":
             mask[3] = 1
