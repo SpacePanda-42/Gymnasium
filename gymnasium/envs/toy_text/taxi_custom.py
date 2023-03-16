@@ -237,7 +237,7 @@ class CustomTaxiEnv(Env):
                                     new_row, new_col, new_pass_idx, dest_idx
                                 )
                                 self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
+                                    (1.0, new_state, reward, terminated)
                                 )
                                 # self.P[state][action].append(
                                 #     (0.1, state, reward, terminated)
@@ -249,7 +249,7 @@ class CustomTaxiEnv(Env):
                                 new_row, new_col, new_pass_idx, dest_idx
                                 )
                                 self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
+                                    (1.0, new_state, reward, terminated)
                                 )
                                 # self.P[state][action].append(
                                 #     (0.1, state, reward, terminated)
@@ -261,7 +261,7 @@ class CustomTaxiEnv(Env):
                                 new_row, new_col, new_pass_idx, dest_idx
                                 )
                                 self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
+                                    (1.0, new_state, reward, terminated)
                                 )
                                 # self.P[state][action].append(
                                 #     (0.1, state, reward, terminated)
@@ -273,7 +273,7 @@ class CustomTaxiEnv(Env):
                                 new_row, new_col, new_pass_idx, dest_idx
                                 )
                                 self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
+                                    (1.0, new_state, reward, terminated)
                                 )
                                 # self.P[state][action].append(
                                 #     (0.1, state, reward, terminated)
