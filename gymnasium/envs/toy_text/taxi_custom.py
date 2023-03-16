@@ -258,10 +258,10 @@ class CustomTaxiEnv(Env):
                                 new_row, new_col, new_pass_idx, dest_idx
                             )
                             self.P[state][action].append(
-                                (0.9, new_state, reward, terminated)
+                                (0.5, new_state, reward, terminated)
                             )
                             self.P[state][action].append(
-                                (0.1, state, -1, False)
+                                (0.5, state, -1, False)
                             )
 
         self.initial_state_distrib /= self.initial_state_distrib.sum()
@@ -297,16 +297,18 @@ class CustomTaxiEnv(Env):
         return i
 
     def decode(self, i):
+        # This decodes the state as an int to a state vector.
+        # state = ((taxi_row * 5 + taxi_col) * 5 + passenger_location) * 4 + destination
+        # passenger locations: 0 (red), 1 (green), 2 (yellow), 3 (blue), 4 (in taxi)
+        # destinations: 0 (red), 1 (green), 2 (yellow), 3 (blue)
         out = []
-        out.append(i % 4)
+        out.append(i % 4) # calculates and appends destination value
         i = i // 4
-        out.append(i % 5)
+        out.append(i % 5) # calculates and appends passenger location value
         i = i // 5
-        out.append(i % 5)
+        out.append(i % 5) # calculates and appends taxi location column value
         i = i // 5
-        out.append(i)
-        print("AYAYAYYAYA")
-        print(i)
+        out.append(i) # calculates and appends taxi location row value
         assert 0 <= i < 5
         return reversed(out)
 
@@ -349,7 +351,8 @@ class CustomTaxiEnv(Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        self.s = categorical_sample(self.initial_state_distrib, self.np_random)
+        # self.s = categorical_sample(self.initial_state_distrib, self.np_random)
+        self.s = 297 # testing starting value 
         self.lastaction = None
         self.taxi_orientation = 0
 
