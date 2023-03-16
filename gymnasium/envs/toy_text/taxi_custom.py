@@ -174,12 +174,12 @@ class CustomTaxiEnv(Env):
         # Action stay corresponds to if, say, our tires slip when we try to move somewhere and we don't move anywhere
         # or maybe a traffic light, accident...etc. 
         num_actions = 7
-        no_transition_prob = 0.1 # probability we take an action, but remain in the current state
+        no_transition_prob = 0.1 # probability we take an action to move, but remain in the current state
         
         # Set some tile coordinates. These are arbitrary choices for the time being
-        self.risky_tiles = [(4,2), (2,3), (3,1)] # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
-        self.hazard_tiles = [(3,3)] # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
-        self.happy_tiles = [(4,2)] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+        self.risky_tiles = [(2,4), (2,3), (2,2)] # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
+        self.hazard_tiles = [(2,1)] # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
+        self.happy_tiles = [(2,0)] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
 
         def get_reward(taxi_loc, wrong_pickup=False, wrong_dropoff=False, correct_dropoff=False, no_movement=False):
             """
@@ -202,7 +202,7 @@ class CustomTaxiEnv(Env):
             elif no_movement:
                 reward = -3
             elif taxi_loc in self.risky_tiles:
-                reward = np.random.randint(-4, 6) # stochastic reward for a "risky" tile. Can modify the values here depending on if we want to make the risk higher or lower. 
+                reward = np.random.randint(-10, 3) # stochastic reward for a "risky" tile. Can modify the values here depending on if we want to make the risk higher or lower. 
             elif taxi_loc in self.hazard_tiles:
                 reward = -3
             elif taxi_loc in self.happy_tiles:
@@ -257,12 +257,20 @@ class CustomTaxiEnv(Env):
                             new_state = self.encode(
                                 new_row, new_col, new_pass_idx, dest_idx
                             )
-                            self.P[state][action].append(
-                                (0.5, new_state, reward, terminated)
-                            )
-                            self.P[state][action].append(
-                                (0.5, state, -1, False)
-                            )
+
+                            if 0 <= action <= 3:
+                                # If we try to move, there is a probability that we remain in the current state
+                                self.P[state][action].append(
+                                    (1-no_transition_prob, new_state, reward, terminated)
+                                )
+                                self.P[state][action].append(
+                                    (no_transition_prob, state, -1, False)
+                                )
+                            else:
+                                # If we stay where we are, pick up, or drop off, we always successfully execute these actions. 
+                                self.P[state][action].append(
+                                    (1.0, new_state, reward, terminated)
+                                )
 
         self.initial_state_distrib /= self.initial_state_distrib.sum()
         self.action_space = spaces.Discrete(num_actions)
