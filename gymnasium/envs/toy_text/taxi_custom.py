@@ -204,6 +204,10 @@ class CustomTaxiEnv(Env):
         self.locs = locs
         self.locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
 
+        self.hazard_tile_color = (255, 127, 0) # orange
+        self.risky_tile_color = (128, 0, 128) # purple
+        self.happy_tile_color = (0, 0, 0) # white
+
         num_states = 500
         num_rows = 5
         num_columns = 5
@@ -541,6 +545,28 @@ class CustomTaxiEnv(Env):
             color_cell = pygame.Surface(self.cell_size)
             color_cell.set_alpha(128)
             color_cell.fill(color)
+            loc = self.get_surf_loc(cell)
+            self.window.blit(color_cell, (loc[0], loc[1] + 10))
+
+        # Custom environment sets colors for the special tiles
+        for cell in self.hazard_tiles:
+            color_cell = pygame.Surface(self.cell_size)
+            color_cell.set_alpha(128)
+            color_cell.fill(self.hazard_tile_color)
+            loc = self.get_surf_loc(cell)
+            self.window.blit(color_cell, (loc[0], loc[1] + 10))
+        
+        for cell in self.risky_tiles:
+            color_cell = pygame.Surface(self.cell_size)
+            color_cell.set_alpha(128)
+            color_cell.fill(self.risky_tile_color)
+            loc = self.get_surf_loc(cell)
+            self.window.blit(color_cell, (loc[0], loc[1] + 10))
+
+        for cell in self.happy_tiles:
+            color_cell = pygame.Surface(self.cell_size)
+            color_cell.set_alpha(128)
+            color_cell.fill(self.happy_tile_color)
             loc = self.get_surf_loc(cell)
             self.window.blit(color_cell, (loc[0], loc[1] + 10))
 
