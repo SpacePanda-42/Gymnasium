@@ -260,8 +260,6 @@ class TaxiEnv(Env):
         out.append(i % 5)
         i = i // 5
         out.append(i)
-        print("AYAYAYYAYA")
-        print(i)
         assert 0 <= i < 5
         return reversed(out)
 

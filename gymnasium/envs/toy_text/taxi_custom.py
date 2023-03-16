@@ -231,7 +231,6 @@ class CustomTaxiEnv(Env):
                                 get_reward(taxi_loc) # returns default reward of -1, which gets overwritten in an if statement later if we pick up or drop off
                             )
                             terminated = False
-                            no_transition_chance = np.random.uniform() # pick a value between 0 and 1. If it's less than the chance we don't transition states when taking an action, then we remain in the current state.
                             if action == 0:
                                 new_row = min(row + 1, max_row)
                                 new_state = self.encode(
@@ -240,9 +239,9 @@ class CustomTaxiEnv(Env):
                                 self.P[state][action].append(
                                     (0.9, new_state, reward, terminated)
                                 )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
+                                # self.P[state][action].append(
+                                #     (0.1, state, reward, terminated)
+                                # )
                             
                             elif action == 1:
                                 new_row = max(row - 1, 0)
@@ -252,9 +251,9 @@ class CustomTaxiEnv(Env):
                                 self.P[state][action].append(
                                     (0.9, new_state, reward, terminated)
                                 )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
+                                # self.P[state][action].append(
+                                #     (0.1, state, reward, terminated)
+                                # )
 
                             if action == 2 and self.desc[1 + row, 2 * col + 2] == b":":
                                 new_col = min(col + 1, max_col)
@@ -264,9 +263,9 @@ class CustomTaxiEnv(Env):
                                 self.P[state][action].append(
                                     (0.9, new_state, reward, terminated)
                                 )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
+                                # self.P[state][action].append(
+                                #     (0.1, state, reward, terminated)
+                                # )
 
                             elif action == 3 and self.desc[1 + row, 2 * col] == b":":
                                 new_col = max(col - 1, 0)
@@ -276,9 +275,9 @@ class CustomTaxiEnv(Env):
                                 self.P[state][action].append(
                                     (0.9, new_state, reward, terminated)
                                 )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
+                                # self.P[state][action].append(
+                                #     (0.1, state, reward, terminated)
+                                # )
 
                             elif action == 4:  # pickup; gives default single time step reward of -1
                                 if pass_idx < 4 and taxi_loc == locs[pass_idx]:
