@@ -203,9 +203,11 @@ class CustomTaxiEnv(Env):
             elif no_movement:
                 reward = -3
             elif taxi_loc in self.risky_tiles:
-                reward = np.random.randint(-10, 3) # stochastic reward for a "risky" tile. Can modify the values here depending on if we want to make the risk higher or lower. 
+                # reward = np.random.randint(-10, 3) # stochastic reward for a "risky" tile. Can modify the values here depending on if we want to make the risk higher or lower. 
+                reward = -12
             elif taxi_loc in self.hazard_tiles:
-                reward = -3
+                # reward = -3
+                reward = -42
             elif taxi_loc in self.happy_tiles:
                 reward = 3
             else:
