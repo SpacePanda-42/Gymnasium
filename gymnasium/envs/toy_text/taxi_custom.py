@@ -541,6 +541,22 @@ class CustomTaxiEnv(Env):
                 elif desc[y][x] == b"-":
                     self.window.blit(self.median_horiz[1], cell)
 
+        # custom environment: color any non-special tiles to make visualization easier
+        for i in range(5):
+            for j in range(5):
+                if (i,j) in self.locs or (i,j) in self.hazard_tiles or (i,j) in self.risky_tiles or (i,j) in self.happy_tiles:
+                    pass
+                else:
+                    cell = (i,j)
+                    color = (200, 200, 200)
+                    
+                    color_cell = pygame.Surface(self.cell_size)
+                    color_cell.set_alpha(128)
+                    color_cell.fill(color)
+                    loc = self.get_surf_loc(cell)
+                    self.window.blit(color_cell, (loc[0], loc[1] + 10))
+                    
+
         for cell, color in zip(self.locs, self.locs_colors):
             color_cell = pygame.Surface(self.cell_size)
             color_cell.set_alpha(128)
