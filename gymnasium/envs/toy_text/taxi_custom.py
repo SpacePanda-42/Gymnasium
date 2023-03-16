@@ -173,7 +173,8 @@ class CustomTaxiEnv(Env):
         # 7 actions means we can: stay, left, right, up, down, pick up passenger, drop off passenger.
         # Action stay corresponds to if, say, our tires slip when we try to move somewhere and we don't move anywhere
         # or maybe a traffic light, accident...etc. 
-        num_actions = 7
+        # num_actions = 7 # use 7 actions if we're using a no movement action
+        num_actions = 6 
         no_transition_prob = 0.1 # probability we take an action to move, but remain in the current state
         
         # Set some tile coordinates. These are arbitrary choices for the time being
@@ -244,19 +245,21 @@ class CustomTaxiEnv(Env):
                                 if pass_idx < 4 and taxi_loc == locs[pass_idx]:
                                     new_pass_idx = 4
                                 else:  # passenger not at location
-                                    reward = -10
+                                    reward = get_reward(taxi_loc, wrong_pickup=True)
                             elif action == 5:  # dropoff
                                 if (taxi_loc == locs[dest_idx]) and pass_idx == 4:
                                     new_pass_idx = dest_idx
                                     terminated = True
-                                    reward = 20
+                                    reward = get_reward(taxi_loc, correct_dropoff=True)
                                 elif (taxi_loc in locs) and pass_idx == 4:
                                     new_pass_idx = locs.index(taxi_loc)
                                 else:  # dropoff at wrong location
-                                    reward = -10
+                                    reward = get_reward(taxi_loc, wrong_dropoff=True)
                             new_state = self.encode(
                                 new_row, new_col, new_pass_idx, dest_idx
                             )
+                            # elif action == 6: # don't do anything. Don't see any reason to use this for now. 
+                            #     reward = get_reward(taxi_loc, no_movement=True)
 
                             if 0 <= action <= 3:
                                 # If we try to move, there is a probability that we remain in the current state
