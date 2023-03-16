@@ -28,11 +28,11 @@ locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
 # This is the larger map that gets plugged in to the environment
 MAP2 = [
     "+-------------------------+",
-    "|R: : : : : : | | | : : :G|",
-    "| : : : : : : | | | : : : |",
-    "| : : : : : : | | | : : : |",
-    "| : : : : : : | | | : : : |",
-    "| : : : : : : | | | : : : |",
+    "|R: : : : : : ||||| : : :G|",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : ||||| : : : |",
     "| : : : : : : : : : : : : |",
     "| : : | : : : : : : : : : |",
     "| : : | : : : : : : : : : |",
@@ -64,11 +64,15 @@ MAP2LEGEND = [
     "| : : : : : : | | |H: : :U|",
     "| : :H: : : : | | |H: : :U|",
     "| : :H: : : :H:H:H:H: : :U|",
-    "| : :U| : : :U:U:U:U: : :U|",
+    "| : :U|Z: : :U:U:U:U: : :U|",
     "| : :U| : : : : : : : : : |",
     "|Y: :U| : : : : : : : :B: |",
     "+-------------------------+",
 ]
+# These correspond to the special tiles for map 2 according to the map legend above
+# risky_tiles = [(8,2), (7,2), (6,2), (6,6), (6,7), (6,8), (6,9), (6,12), (5,12), (4,12), (3,12), (2,12), (1,12)]
+# hazard_tiles = [(5,2), (4,2), (5,6), (5,7), (5,8), (5,9), (4,9), (3,9), (2,9), (1,9), (0,9)]
+# happy_tiles = [(6,3)]
 
 WINDOW_SIZE = (550, 350)
 
@@ -206,12 +210,24 @@ class CustomTaxiEnv(Env):
         "render_fps": 4,
     }
 
-    def __init__(self, map=MAP, locs=locs, n_rows=5, n_cols=5, locs_colors=locs_colors, render_mode: Optional[str] = None):
+    def __init__(self, map=MAP, window_size=WINDOW_SIZE, risky_tiles=[], hazard_tiles = [], happy_tiles = [], locs=locs, n_rows=5, n_cols=5, locs_colors=locs_colors, render_mode: Optional[str] = None):
         self.desc = np.asarray(map, dtype="c")
 
         self.locs = locs
         self.locs_colors = locs_colors
         self.n_rows = n_rows
+
+        # 7 actions means we can: stay, left, right, up, down, pick up passenger, drop off passenger.
+        # Action stay corresponds to if, say, our tires slip when we try to move somewhere and we don't move anywhere
+        # or maybe a traffic light, accident...etc. 
+        num_actions = 7 # left, right, up, down, pick up, drop off, do nothing 
+        no_transition_prob = 0.1 # probability we take an action, but remain in the current state
+        
+        # Set some tile coordinates. These are arbitrary choices for the time being
+        self.risky_tiles = risky_tiles # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
+        self.hazard_tiles = hazard_tiles # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
+        self.happy_tiles = happy_tiles # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+        self.WINDOW_SIZE = window_size
 
         num_rows = n_rows
         num_columns = n_cols
@@ -219,7 +235,6 @@ class CustomTaxiEnv(Env):
         max_row = num_rows - 1
         max_col = num_columns - 1
         self.initial_state_distrib = np.zeros(num_states)
-        num_actions = 7 # left, right, up, down, pick up, drop off, do nothing 
         self.P = {
             state: {action: [] for action in range(num_actions)}
             for state in range(num_states)
@@ -278,8 +293,8 @@ class CustomTaxiEnv(Env):
         self.window = None
         self.clock = None
         self.cell_size = (
-            WINDOW_SIZE[0] / self.desc.shape[1],
-            WINDOW_SIZE[1] / self.desc.shape[0],
+            self.WINDOW_SIZE[0] / self.desc.shape[1],
+            self.WINDOW_SIZE[1] / self.desc.shape[0],
         )
         self.taxi_imgs = None
         self.taxi_orientation = 0
@@ -389,9 +404,9 @@ class CustomTaxiEnv(Env):
             pygame.init()
             pygame.display.set_caption("Taxi")
             if mode == "human":
-                self.window = pygame.display.set_mode(WINDOW_SIZE)
+                self.window = pygame.display.set_mode(self.WINDOW_SIZE)
             elif mode == "rgb_array":
-                self.window = pygame.Surface(WINDOW_SIZE)
+                self.window = pygame.Surface(self.WINDOW_SIZE)
 
         assert (
             self.window is not None
