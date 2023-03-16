@@ -226,96 +226,40 @@ class CustomTaxiEnv(Env):
                         for action in range(num_actions):
                             # defaults
                             new_row, new_col, new_pass_idx = row, col, pass_idx
-                            taxi_loc = (row, col)
                             reward = (
-                                get_reward(taxi_loc) # returns default reward of -1, which gets overwritten in an if statement later if we pick up or drop off
-                            )
+                                -1
+                            )  # default reward when there is no pickup/dropoff
                             terminated = False
+                            taxi_loc = (row, col)
+
                             if action == 0:
                                 new_row = min(row + 1, max_row)
-                                new_state = self.encode(
-                                    new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-                                # self.P[state][action].append(
-                                #     (0.1, state, reward, terminated)
-                                # )
-                            
                             elif action == 1:
                                 new_row = max(row - 1, 0)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-                                # self.P[state][action].append(
-                                #     (0.1, state, reward, terminated)
-                                # )
-
                             if action == 2 and self.desc[1 + row, 2 * col + 2] == b":":
                                 new_col = min(col + 1, max_col)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-                                # self.P[state][action].append(
-                                #     (0.1, state, reward, terminated)
-                                # )
-
                             elif action == 3 and self.desc[1 + row, 2 * col] == b":":
                                 new_col = max(col - 1, 0)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-                                # self.P[state][action].append(
-                                #     (0.1, state, reward, terminated)
-                                # )
-
-                            elif action == 4:  # pickup; gives default single time step reward of -1
+                            elif action == 4:  # pickup
                                 if pass_idx < 4 and taxi_loc == locs[pass_idx]:
                                     new_pass_idx = 4
-                                else:  # passenger not at location; outsize negative reward
-                                    reward = get_reward(taxi_loc, wrong_pickup = True)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-
+                                else:  # passenger not at location
+                                    reward = -10
                             elif action == 5:  # dropoff
                                 if (taxi_loc == locs[dest_idx]) and pass_idx == 4:
                                     new_pass_idx = dest_idx
                                     terminated = True
-                                    reward = get_reward(taxi_loc, correct_dropoff=True)
-                                elif (taxi_loc in locs) and pass_idx == 4: # What does this do?? Looks like it drops the passenger off if we end up at one of the places in locs, even if it's not the destination
+                                    reward = 20
+                                elif (taxi_loc in locs) and pass_idx == 4:
                                     new_pass_idx = locs.index(taxi_loc)
                                 else:  # dropoff at wrong location
-                                    reward = get_reward(taxi_loc, wrong_dropoff=True)
-                                new_state = self.encode(
-                                    new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-
-                            elif action == 6: # stay in current state on purpose
-                                reward = get_reward(taxi_loc, no_movement=True)
-                                new_state = self.encode(
-                                    new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state,
-                                     reward, terminated)
-                                )
+                                    reward = -10
+                            new_state = self.encode(
+                                new_row, new_col, new_pass_idx, dest_idx
+                            )
+                            self.P[state][action].append(
+                                (1.0, new_state, reward, terminated)
+                            )
 
         self.initial_state_distrib /= self.initial_state_distrib.sum()
         self.action_space = spaces.Discrete(num_actions)
