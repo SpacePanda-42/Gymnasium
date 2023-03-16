@@ -20,10 +20,64 @@ MAP = [
     "|Y| : |B: |",
     "+---------+",
 ]
+
+locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
+locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
+
+
+# This is the larger map that gets plugged in to the environment
+MAP2 = [
+    "+-------------------------+",
+    "|R: : : : : : ||||| : : :G|",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : ||||| : : : |",
+    "| : : : : : : : : : : : : |",
+    "| : : | : : : : : : : : : |",
+    "| : : | : : : : : : : : : |",
+    "|Y: : | : : : : : : : :B: |",
+    "+-------------------------+",
+]
+
+# This version of the maps does not get used by the simulator, but it's here to visually show where danger and risky tiles are located
+# U = RISKY TILE
+# H = HAZARD TILE
+# Z = GOOD TILE
+# TODO Implement these
+# Note: ":" denotes a visual separation between two spaces in the grid, " " means empty space, "|" means wall/barrier.
+# "R", "G", "Y", and "B" are all possible pickup or dropoff locations. We can pick these randomly (?) (not sure how they're currently chosen)
+# Assuming the taxi starts off from a random location.
+
+# Why this layout?
+# Assuming we go Y --> G...
+# 1) A* picks the shortest path. This will bring it through the H squares, and accumulate outsize negative reward
+# 2) Q-learning will mistakenly take the U tiles due to the "max" in the Q-learning equation. Double-Q learning should avoid this pitfall and go around the U tiles (which have stochastic reward, but the expected value is negative). 
+# 3) Maybe some other justifications. What would we expect for SARSA and Deep Q? Potential model-based method?
+
+
+MAP2LEGEND = [
+    "+-------------------------+",
+    "|R: : : : : : | | |H: : :G|",
+    "| : : : : : : | | |H: : :U|",
+    "| : : : : : : | | |H: : :U|",
+    "| : : : : : : | | |H: : :U|",
+    "| : :H: : : : | | |H: : :U|",
+    "| : :H: : : :H:H:H:H: : :U|",
+    "| : :U|Z: : :U:U:U:U: : :U|",
+    "| : :U| : : : : : : : : : |",
+    "|Y: :U| : : : : : : : :B: |",
+    "+-------------------------+",
+]
+# These correspond to the special tiles for map 2 according to the map legend above
+# risky_tiles = [(8,2), (7,2), (6,2), (6,6), (6,7), (6,8), (6,9), (6,12), (5,12), (4,12), (3,12), (2,12), (1,12)]
+# hazard_tiles = [(5,2), (4,2), (5,6), (5,7), (5,8), (5,9), (4,9), (3,9), (2,9), (1,9), (0,9)]
+# happy_tiles = [(6,3)]
+
 WINDOW_SIZE = (550, 350)
 
 
-class TaxiEnv(Env):
+class CustomTaxiEnv(Env):
     """
     The Taxi Problem involves navigating to passengers in a grid world, picking them up and dropping them
     off at one of four locations.
@@ -156,62 +210,33 @@ class TaxiEnv(Env):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None):
-        self.desc = np.asarray(MAP, dtype="c")
+    def __init__(self, map=MAP, window_size=WINDOW_SIZE, risky_tiles=[], hazard_tiles = [], happy_tiles = [], locs=locs, n_rows=5, n_cols=5, locs_colors=locs_colors, render_mode: Optional[str] = None):
+        self.desc = np.asarray(map, dtype="c")
 
-        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
-        self.locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
-
-        num_states = 500
-        num_rows = 5
-        num_columns = 5
-        max_row = num_rows - 1
-        max_col = num_columns - 1
-        self.initial_state_distrib = np.zeros(num_states)
-        num_actions = 6
+        self.locs = locs
+        self.locs_colors = locs_colors
+        self.n_rows = n_rows
 
         # 7 actions means we can: stay, left, right, up, down, pick up passenger, drop off passenger.
         # Action stay corresponds to if, say, our tires slip when we try to move somewhere and we don't move anywhere
         # or maybe a traffic light, accident...etc. 
-        num_actions = 7
+        num_actions = 7 # left, right, up, down, pick up, drop off, do nothing 
         no_transition_prob = 0.1 # probability we take an action, but remain in the current state
         
         # Set some tile coordinates. These are arbitrary choices for the time being
-        self.risky_tiles = [(4,2), (2,3), (3,1)] # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
-        self.hazard_tiles = [(3,3)] # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
-        self.happy_tiles = [(4,2)] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+        self.risky_tiles = risky_tiles # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
+        self.hazard_tiles = hazard_tiles # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
+        self.happy_tiles = happy_tiles # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+        self.WINDOW_SIZE = window_size
 
-        def get_reward(taxi_loc, wrong_pickup=False, wrong_dropoff=False, correct_dropoff=False, no_movement=False):
-            """
-            Return reward for a specific tile
-
-            Kwargs:
-            taxi_loc: A tuple containing the (row, col) location of the taxi
-            
-            Returns:
-            An integer (the reward for that tile)
-            """
-            possible_reward_vals = np.arange(0,21) # possible reward value magnitudes range from 0 to 20
-            default_reward = -1
-            if wrong_pickup:
-                reward = -10
-            elif wrong_dropoff:
-                reward = -10
-            elif correct_dropoff:
-                reward = 20
-            elif no_movement:
-                reward = -3
-            elif taxi_loc in self.risky_tiles:
-                reward = np.random.randint(-4, 6) # stochastic reward for a "risky" tile. Can modify the values here depending on if we want to make the risk higher or lower. 
-            elif taxi_loc in self.hazard_tiles:
-                reward = -3
-            elif taxi_loc in self.happy_tiles:
-                reward = 3
-            else:
-                reward = default_reward
-            return reward
-
-        # transition probabilities for the states
+        num_rows = n_rows
+        num_columns = n_cols
+        num_states = n_rows*n_cols*5*4 # num_states = (number of taxi positions) x (possible locations for passenger) x (number of destination locations)
+        max_row = num_rows - 1
+        max_col = num_columns - 1
+        self.max_row = num_rows - 1
+        self.max_col = num_columns - 1
+        self.initial_state_distrib = np.zeros(num_states)
         self.P = {
             state: {action: [] for action in range(num_actions)}
             for state in range(num_states)
@@ -226,98 +251,39 @@ class TaxiEnv(Env):
                         for action in range(num_actions):
                             # defaults
                             new_row, new_col, new_pass_idx = row, col, pass_idx
-                            taxi_loc = (row, col)
                             reward = (
-                                get_reward(taxi_loc) # returns default reward of -1, which gets overwritten in an if statement later if we pick up or drop off
-                            )
+                                -1
+                            )  # default reward when there is no pickup/dropoff
                             terminated = False
-                            no_transition_chance = np.random.uniform() # pick a value between 0 and 1. If it's less than the chance we don't transition states when taking an action, then we remain in the current state.
+                            taxi_loc = (row, col)
                             if action == 0:
                                 new_row = min(row + 1, max_row)
-                                new_state = self.encode(
-                                    new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
-                                )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
-                            
                             elif action == 1:
                                 new_row = max(row - 1, 0)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
-                                )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
-
                             if action == 2 and self.desc[1 + row, 2 * col + 2] == b":":
                                 new_col = min(col + 1, max_col)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
-                                )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
-
                             elif action == 3 and self.desc[1 + row, 2 * col] == b":":
                                 new_col = max(col - 1, 0)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (0.9, new_state, reward, terminated)
-                                )
-                                self.P[state][action].append(
-                                    (0.1, state, reward, terminated)
-                                )
-
-                            elif action == 4:  # pickup; gives default single time step reward of -1
+                            elif action == 4:  # pickup
                                 if pass_idx < 4 and taxi_loc == locs[pass_idx]:
                                     new_pass_idx = 4
-                                else:  # passenger not at location; outsize negative reward
-                                    reward = get_reward(taxi_loc, wrong_pickup = True)
-                                new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-
+                                else:  # passenger not at location
+                                    reward = -10
                             elif action == 5:  # dropoff
                                 if (taxi_loc == locs[dest_idx]) and pass_idx == 4:
                                     new_pass_idx = dest_idx
                                     terminated = True
-                                    reward = get_reward(taxi_loc, correct_dropoff=True)
-                                elif (taxi_loc in locs) and pass_idx == 4: # What does this do?? Looks like it drops the passenger off if we end up at one of the places in locs, even if it's not the destination
+                                    reward = 20
+                                elif (taxi_loc in locs) and pass_idx == 4:
                                     new_pass_idx = locs.index(taxi_loc)
                                 else:  # dropoff at wrong location
-                                    reward = get_reward(taxi_loc, wrong_dropoff=True)
-                                new_state = self.encode(
-                                    new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state, reward, terminated)
-                                )
-
-                            elif action == 6: # stay in current state on purpose
-                                reward = get_reward(taxi_loc, no_movement=True)
-                                new_state = self.encode(
-                                    new_row, new_col, new_pass_idx, dest_idx
-                                )
-                                self.P[state][action].append(
-                                    (1.0, new_state,
-                                     reward, terminated)
-                                )
-                                
+                                    reward = -10
+                            new_state = self.encode(
+                                new_row, new_col, new_pass_idx, dest_idx
+                            )
+                            self.P[state][action].append(
+                                (1.0, new_state, reward, terminated)
+                            )
         self.initial_state_distrib /= self.initial_state_distrib.sum()
         self.action_space = spaces.Discrete(num_actions)
         self.observation_space = spaces.Discrete(num_states)
@@ -328,8 +294,8 @@ class TaxiEnv(Env):
         self.window = None
         self.clock = None
         self.cell_size = (
-            WINDOW_SIZE[0] / self.desc.shape[1],
-            WINDOW_SIZE[1] / self.desc.shape[0],
+            self.WINDOW_SIZE[0] / self.desc.shape[1],
+            self.WINDOW_SIZE[1] / self.desc.shape[0],
         )
         self.taxi_imgs = None
         self.taxi_orientation = 0
@@ -351,28 +317,30 @@ class TaxiEnv(Env):
         return i
 
     def decode(self, i):
+        # This decodes the state as an int to a state vector.
+        # state = ((taxi_row * 5 + taxi_col) * 5 + passenger_location) * 4 + destination
+        # passenger locations: 0 (red), 1 (green), 2 (yellow), 3 (blue), 4 (in taxi)
+        # destinations: 0 (red), 1 (green), 2 (yellow), 3 (blue)
         out = []
-        out.append(i % 4)
+        out.append(i % 4) # calculates and appends destination value 
         i = i // 4
-        out.append(i % 5)
+        out.append(i % 5) # calculates and appends passenger location value
         i = i // 5
-        out.append(i % 5)
+        out.append(i % 5) # calculates and appends taxi location column value
         i = i // 5
-        out.append(i)
-        print("AYAYAYYAYA")
-        print(i)
-        assert 0 <= i < 5
+        out.append(i) # calculates and appends taxi location row value
+        assert 0 <= i < self.n_rows # note: this makes sure it's a valid state by checking that i (which corresponds to taxi location row number) is a valid row 
         return reversed(out)
 
     def action_mask(self, state: int):
         """Computes an action mask for the action space using the state information."""
         mask = np.zeros(6, dtype=np.int8)
         taxi_row, taxi_col, pass_loc, dest_idx = self.decode(state)
-        if taxi_row < 4:
+        if taxi_row < self.max_row:
             mask[0] = 1
         if taxi_row > 0:
             mask[1] = 1
-        if taxi_col < 4 and self.desc[taxi_row + 1, 2 * taxi_col + 2] == b":":
+        if taxi_col < self.max_col and self.desc[taxi_row + 1, 2 * taxi_col + 2] == b":":
             mask[2] = 1
         if taxi_col > 0 and self.desc[taxi_row + 1, 2 * taxi_col] == b":":
             mask[3] = 1
@@ -437,9 +405,9 @@ class TaxiEnv(Env):
             pygame.init()
             pygame.display.set_caption("Taxi")
             if mode == "human":
-                self.window = pygame.display.set_mode(WINDOW_SIZE)
+                self.window = pygame.display.set_mode(self.WINDOW_SIZE)
             elif mode == "rgb_array":
-                self.window = pygame.Surface(WINDOW_SIZE)
+                self.window = pygame.Surface(self.WINDOW_SIZE)
 
         assert (
             self.window is not None
