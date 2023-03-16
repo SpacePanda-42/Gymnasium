@@ -23,6 +23,48 @@ MAP = [
 WINDOW_SIZE = (550, 350)
 
 
+MAP2 = [
+    "+---------+",
+    "|R: : : :G|",
+    "| : : : : |",
+    "| : : : : |",
+    "| : : : : |",
+    "|Y: : : :B|",
+    "+---------+",
+]
+
+MAP2LEGEND = [
+    "+---------+",
+    "|R: :H: :G|",
+    "|U: :U: :U|",
+    "| : : : :H|",
+    "| :U:U: :H|",
+    "|Y:H:U: :B|",
+    "+---------+",
+]
+
+# Set some tile coordinates. These are arbitrary choices for the time being
+risky_tiles = [(1,0), (1,2), (1,4), (3,1), (3,2)] # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
+hazard_tiles = [(0,2), (4,1), (4,2), (4,4)] # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
+happy_tiles = [] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+starting_state = 297
+
+# This version of the map (the legend) does not get used by the simulator, but it's here to visually show where danger and risky tiles are located
+# U = RISKY TILE
+# H = HAZARD TILE
+# Z = GOOD TILE
+# Note: ":" denotes a visual separation between two spaces in the grid, " " means empty space, "|" means wall/barrier.
+# "R", "G", "Y", and "B" are all possible pickup or dropoff locations. We can pick these randomly (?) (not sure how they're currently chosen)
+# Assuming the taxi starts off from a random location.
+
+# Why this layout?
+# Assuming we go Y --> B...
+# 1) A* picks the shortest path. This will bring it through the H squares, and accumulate outsize negative reward
+# 2) Q-learning will mistakenly take the U tiles due to the "max" in the Q-learning equation. Double-Q learning should avoid this pitfall and go around the U tiles (which have stochastic reward, but the expected value is negative). 
+# 3) Maybe some other justifications. What would we expect for SARSA and Deep Q? Potential model-based method?
+
+
+
 class CustomTaxiEnv(Env):
     """
     The Taxi Problem involves navigating to passengers in a grid world, picking them up and dropping them
@@ -156,7 +198,7 @@ class CustomTaxiEnv(Env):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None):
+    def __init__(self, starting_state=None, risky_tiles = risky_tiles, hazard_tiles = hazard_tiles, happy_tiles = happy_tiles, render_mode: Optional[str] = None):
         self.desc = np.asarray(MAP, dtype="c")
 
         self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
@@ -177,10 +219,10 @@ class CustomTaxiEnv(Env):
         num_actions = 6 
         no_transition_prob = 0.1 # probability we take an action to move, but remain in the current state
         
-        # Set some tile coordinates. These are arbitrary choices for the time being
-        self.risky_tiles = [(2,4), (2,3), (2,2)] # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
-        self.hazard_tiles = [(2,1)] # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
-        self.happy_tiles = [] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+        self.risky_tiles = risky_tiles
+        self.hazard_tiles = hazard_tiles
+        self.happy_tiles = happy_tiles
+        self.starting_state = starting_state
 
         def get_reward(taxi_loc, wrong_pickup=False, wrong_dropoff=False, correct_dropoff=False, no_movement=False):
             """
@@ -203,11 +245,9 @@ class CustomTaxiEnv(Env):
             elif no_movement:
                 reward = -3
             elif taxi_loc in self.risky_tiles:
-                # reward = np.random.randint(-10, 3) # stochastic reward for a "risky" tile. Can modify the values here depending on if we want to make the risk higher or lower. 
-                reward = -12
+                reward = np.random.randint(-6, 1) # stochastic reward for a "risky" tile. Returns value between lower and upper bound, inclusive of lower bound only. Can modify the values here depending on if we want to make the risk higher or lower. 
             elif taxi_loc in self.hazard_tiles:
-                # reward = -3
-                reward = -42
+                reward = -10
             elif taxi_loc in self.happy_tiles:
                 reward = 3
             else:
@@ -379,8 +419,11 @@ class CustomTaxiEnv(Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        # self.s = categorical_sample(self.initial_state_distrib, self.np_random)
-        self.s = 297 # testing starting value 
+        # Custom model modification: option to specify the starting state
+        if self.starting_state is None:
+            self.s = categorical_sample(self.initial_state_distrib, self.np_random)
+        else:
+            self.s = self.starting_state
         self.lastaction = None
         self.taxi_orientation = 0
 
