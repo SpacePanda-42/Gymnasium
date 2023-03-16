@@ -258,7 +258,10 @@ class CustomTaxiEnv(Env):
                                 new_row, new_col, new_pass_idx, dest_idx
                             )
                             self.P[state][action].append(
-                                (1.0, new_state, reward, terminated)
+                                (0.9, new_state, reward, terminated)
+                            )
+                            self.P[state][action].append(
+                                (0.1, state, -1, False)
                             )
 
         self.initial_state_distrib /= self.initial_state_distrib.sum()
