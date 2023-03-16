@@ -180,7 +180,7 @@ class CustomTaxiEnv(Env):
         # Set some tile coordinates. These are arbitrary choices for the time being
         self.risky_tiles = [(2,4), (2,3), (2,2)] # We'll define these to be risky, i.e. there is a random chance that they could slow us down or speed us up
         self.hazard_tiles = [(2,1)] # Define hazard tiles as having an extra negative reward, i.e. they slow us down or something
-        self.happy_tiles = [(2,0)] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
+        self.happy_tiles = [] # Define helpful tiles as having extra positive reward, i.e. they speed us up or something
 
         def get_reward(taxi_loc, wrong_pickup=False, wrong_dropoff=False, correct_dropoff=False, no_movement=False):
             """
@@ -235,17 +235,31 @@ class CustomTaxiEnv(Env):
 
                             if action == 0:
                                 new_row = min(row + 1, max_row)
+                                new_loc = (new_row, col)
+                                reward = get_reward(new_loc)
+                                
                             elif action == 1:
                                 new_row = max(row - 1, 0)
+                                new_loc = (new_row, col)
+                                reward = get_reward(new_loc)
+
                             if action == 2 and self.desc[1 + row, 2 * col + 2] == b":":
                                 new_col = min(col + 1, max_col)
+                                new_loc = (row, new_col)
+                                reward = get_reward(new_loc)
+
                             elif action == 3 and self.desc[1 + row, 2 * col] == b":":
                                 new_col = max(col - 1, 0)
+                                new_loc = (row, new_col)
+                                reward = get_reward(new_loc)
+
                             elif action == 4:  # pickup
                                 if pass_idx < 4 and taxi_loc == locs[pass_idx]:
                                     new_pass_idx = 4
+                                    reward = get_reward(taxi_loc)
                                 else:  # passenger not at location
                                     reward = get_reward(taxi_loc, wrong_pickup=True)
+
                             elif action == 5:  # dropoff
                                 if (taxi_loc == locs[dest_idx]) and pass_idx == 4:
                                     new_pass_idx = dest_idx
@@ -253,6 +267,7 @@ class CustomTaxiEnv(Env):
                                     reward = get_reward(taxi_loc, correct_dropoff=True)
                                 elif (taxi_loc in locs) and pass_idx == 4:
                                     new_pass_idx = locs.index(taxi_loc)
+                                    reward = get_reward(taxi_loc)
                                 else:  # dropoff at wrong location
                                     reward = get_reward(taxi_loc, wrong_dropoff=True)
                             new_state = self.encode(
@@ -267,7 +282,7 @@ class CustomTaxiEnv(Env):
                                     (1-no_transition_prob, new_state, reward, terminated)
                                 )
                                 self.P[state][action].append(
-                                    (no_transition_prob, state, -1, False)
+                                    (no_transition_prob, state, get_reward(taxi_loc), False)
                                 )
                             else:
                                 # If we stay where we are, pick up, or drop off, we always successfully execute these actions. 
