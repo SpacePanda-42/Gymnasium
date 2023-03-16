@@ -256,9 +256,13 @@ class CustomTaxiEnv(Env):
                             )  # default reward when there is no pickup/dropoff
                             terminated = False
                             taxi_loc = (row, col)
-
+                            print("action!!!!!")
+                            print(action)
+                            print(row)
                             if action == 0:
+                                print("i entered this if")
                                 new_row = min(row + 1, max_row)
+                                print(new_row)
                             elif action == 1:
                                 new_row = max(row - 1, 0)
                             if action == 2 and self.desc[1 + row, 2 * col + 2] == b":":
@@ -330,7 +334,7 @@ class CustomTaxiEnv(Env):
         out.append(i % 5) # calculates and appends taxi location column value
         i = i // 5
         out.append(i) # calculates and appends taxi location row value
-        # assert 0 <= i < self.n_rows # note: this makes sure it's a valid state by checking that i (which corresponds to taxi location row number) is a valid row 
+        assert 0 <= i < self.n_rows # note: this makes sure it's a valid state by checking that i (which corresponds to taxi location row number) is a valid row 
         return reversed(out)
 
     def action_mask(self, state: int):
